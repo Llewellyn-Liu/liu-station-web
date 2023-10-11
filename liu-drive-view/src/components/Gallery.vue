@@ -1,7 +1,6 @@
 <script>
 import {useUserStore} from "@/stores/user";
 import {useImageListStore} from "@/stores/imageList";
-import {fi} from "vuetify/locale";
 
 export default {
   setup() {
@@ -19,7 +18,21 @@ export default {
   methods: {
     async dr_downloadImage(filename) {
       window.open("/drive/image/" + this.userStore.id + "/" + filename)
-    }
+    },
+
+    async dr_deleteImage(){
+      const result = await fetch("/drive/image/"+this.userStore.id+"/"+this.sc_overlayDisplayFilename, {
+        method: "DELETE",
+      });
+
+      if(result.status === 200){
+        console.log("image "+filename+" deleted");
+      }
+      else if(result.status === 400){
+        console.log("image "+filename+" failed to delete.")
+      }
+      else console.log("An error occurs, please check the source code")
+    },
   }
 }
 
@@ -27,42 +40,15 @@ export default {
 
 <template>
 
-<!--      <v-container fluid v-if="userStore.userLoggedIn">-->
-<!--        <v-row>-->
-
-<!--          <v-col-->
-<!--              v-for="(e, eid) in imageListStore.list"-->
-<!--              class="d-flex"-->
-<!--              cols="1"-->
-<!--          >-->
-<!--            <v-card max-height="15vh" elevation="5">-->
-<!--              <v-img-->
-<!--                  cover-->
-<!--                  height="100%"-->
-<!--                  :src="'http://localhost:8080/drive/image/'+userStore.id+'/'+e.filename+'/thumbnail'"-->
-<!--                  class="align-end"-->
-<!--                  aspect-ratio="1"-->
-<!--                  gradient="to bottom, rgba(0,0,0,.1), rgba(0,0,0,.5)"-->
-<!--                  :alt="'img-'+eid"-->
-<!--              >-->
-<!--                <div style="width:12vh; overflow: hidden">-->
-<!--                  <v-card-title class="text-white">{{ e.filename }} </v-card-title>-->
-<!--                </div>-->
-
-<!--              </v-img>-->
-<!--            </v-card>-->
-<!--          </v-col>-->
-
-<!--        </v-row>-->
-<!--      </v-container>      -->
-
   <div class="flex-container">
     <div v-for="e in imageListStore.list">
 
       <v-hover>
         <template v-slot:default="{isHovering, props}">
-          <v-card v-bind="props" :class="'block-'+e.scale+' rounded-xl'" :elevation="isHovering?15:5" @click="sc_overlayDisplayFilename=e.filename; sc_overlayOn=true">
-            <v-img :src="'http://localhost:8080/drive/image/'+userStore.id+'/'+e.filename+'/thumbnail'" cover=""></v-img>
+          <v-card v-bind="props" :class="'block-'+e.scale+' rounded-xl'" :elevation="isHovering?15:5"
+                  @click="sc_overlayDisplayFilename=e.filename; sc_overlayOn=true">
+            <v-img :src="'http://localhost:8080/drive/image/'+userStore.id+'/'+e.filename+'/thumbnail'"
+                   cover=""></v-img>
           </v-card>
         </template>
       </v-hover>
@@ -70,8 +56,16 @@ export default {
     </div>
   </div>
 
-  <v-overlay scroll-strategy="none" v-model="sc_overlayOn" id="display-overlay" class="align-center justify-center">
-    <v-img width="100vh" max-height="75vh" :src="'http://localhost:8080/drive/image/'+userStore.id+'/'+sc_overlayDisplayFilename"></v-img>
+  <!--  <v-overlay scroll-strategy="none" v-model="sc_overlayOn" id="display-overlay" class="align-center justify-center">-->
+  <v-overlay scroll-strategy="block" v-model="sc_overlayOn" id="display-overlay"
+             style="display:flex; align-items: center; justify-content: center">
+
+    <v-img max-height="75vh"
+           :src="'http://localhost:8080/drive/image/'+userStore.id+'/'+sc_overlayDisplayFilename"></v-img>
+
+    <v-sheet style="padding: 0" class="rounded-xl image-view-controller">
+      <v-btn color="error" class="ma-5" @click="dr_deleteImage">Delete</v-btn>
+    </v-sheet>
   </v-overlay>
 
 
@@ -81,7 +75,7 @@ export default {
 .flex-container {
   display: flex;
   flex-wrap: wrap; /* Problem solved by ChatGPT */
-  height: 100vh;
+  height: 100%;
   width: 100vw;
   align-content: start;
   justify-content: start;
@@ -95,10 +89,28 @@ export default {
   cursor: pointer;
 }
 
-.block-2{
-  width: 26vh; /* 15 + 15 + 2 * margin*/
+.block-2 {
+  width: 26vh; /* height + height + 2 * margin*/
   height: 12vh;
   margin: 1vh 1vh;
   cursor: pointer;
 }
+
+.image-view-controller {
+  margin: 2vh auto;
+  width: 50vw;
+  height: 10vh;
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+}
+
+
+/* ref: https://zxuqian.cn/css-how-to-hide-scrollbars/*/
+.image-view-controller::-webkit-scrollbar {
+  display: none;
+}
+
+
+
 </style>

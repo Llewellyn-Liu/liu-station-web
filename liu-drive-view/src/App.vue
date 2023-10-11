@@ -1,9 +1,7 @@
 <template>
   <v-app>
     <v-app-bar title="Drive">
-<!--      <v-btn @click="dr_uploadPanelOpen=true" :disabled="!userStore.userLoggedIn" density="default"-->
-<!--             icon="mdi-plus"></v-btn>-->
-      <v-btn @click="dr_uploadPanelOpen=true"  density="default"
+      <v-btn @click="dr_uploadPanelOpen=true" :disabled="!userStore.userLoggedIn" density="default"
              icon="mdi-plus"></v-btn>
       <v-btn @click="loginButtonController" id="lg_loginBtTopBar">{{ barLoginButtonContent }}</v-btn>
       <v-card style="width: 20vw; max-width: 25em" v-if="userStore.userLoggedIn">
@@ -28,7 +26,7 @@
       <SideBar @passToParent="console.log('received')"/>
     </v-navigation-drawer>
 
-    <v-main style="min-height: 300px;">
+    <v-main>
       <RouterView/>
     </v-main>
 
@@ -392,15 +390,26 @@ export default {
     },
 
     async dr_refresh() {
-      const galleryFetchResult = await this.dr_galleryGet(0);
-      const fileFetchResult = await this.dr_objectFileListGet(0);
-      const memoFetchResult = await this.dr_memoGet();
-
-      this.imageListStore.setList(galleryFetchResult);
-      this.fileListStore.setList(fileFetchResult);
-      this.fileListStore.setMemo(memoFetchResult);
+      console.log(this.userStore.id,this.userStore.userLoggedIn, this.userStore.name)
+      // const galleryFetchResult = await this.dr_galleryGet(0);
+      // const fileFetchResult = await this.dr_objectFileListGet(0);
+      // const memoFetchResult = await this.dr_memoGet();
+      //
+      // this.imageListStore.setList(galleryFetchResult);
+      // this.fileListStore.setList(fileFetchResult);
+      // this.fileListStore.setMemo(memoFetchResult);
       console.log("Refreshed")
     },
+    // async dr_refresh() {
+    //   const galleryFetchResult = await this.dr_galleryGet(0);
+    //   const fileFetchResult = await this.dr_objectFileListGet(0);
+    //   const memoFetchResult = await this.dr_memoGet();
+    //
+    //   this.imageListStore.setList(galleryFetchResult);
+    //   this.fileListStore.setList(fileFetchResult);
+    //   this.fileListStore.setMemo(memoFetchResult);
+    //   console.log("Refreshed")
+    // },
 
     //
   },

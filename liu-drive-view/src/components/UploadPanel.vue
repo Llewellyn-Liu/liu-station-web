@@ -187,48 +187,37 @@ export default {
      * API v0.1.2 M4.2.2.1
      * @returns {Promise<void>}
      */
-    // async sc_uploadFile() {
-    //
-    //   if (this.fileUpload.size > 1048576) {
-    //
-    //     const requestStatus = dr_sendLargeFileMeta();
-    //     if(requestStatus === 204) {
-    //       for(let i = 0; i< 5; i++){
-    //         const unit = this.fileUpload.slice()
-    //       }
-    //     };
-    //       //success;
-    //     else ; //failed
-    //
-    //
-    //
-    //   } else {
-    //     const requestBody = new FormData();
-    //     // //meta info as unity
-    //     // requestBody.append("part1", new Blob([JSON.stringify({
-    //     //   "userId": this.test_user.id,
-    //     //   "filename": this.test_fileData.name,
-    //     // })], {type: "application/json"}));
-    //
-    //     requestBody.append("meta", new Blob([JSON.stringify(
-    //         {
-    //           "userId": this.userStore.id,
-    //           "filename": this.fileUpload.filename,
-    //           "accessibility": this.fileUpload.accessibility,
-    //           "author": this.fileUpload.author,
-    //           "type": this.fileUpload.type,
-    //           "tag": this.fileUpload.tag,
-    //         }
-    //     )], {type: "application/json"}))
-    //     requestBody.append("file", this.fileUpload.data);
-    //
-    //     const result = await fetch("/drive/object/form", {
-    //       method: "POST",
-    //       body: requestBody,
-    //     })
-    //   }
-    //
-    // },
+    async sc_uploadFile() {
+
+      if (this.fileUpload.size > 1048576) {
+        console.log("File too big to upload.")
+      } else {
+        const requestBody = new FormData();
+        // //meta info as unity
+        // requestBody.append("part1", new Blob([JSON.stringify({
+        //   "userId": this.test_user.id,
+        //   "filename": this.test_fileData.name,
+        // })], {type: "application/json"}));
+
+        requestBody.append("meta", new Blob([JSON.stringify(
+            {
+              "userId": this.userStore.id,
+              "filename": this.fileUpload.filename,
+              "accessibility": this.fileUpload.accessibility,
+              "author": this.fileUpload.author,
+              "type": this.fileUpload.type,
+              "tag": this.fileUpload.tag,
+            }
+        )], {type: "application/json"}))
+        requestBody.append("file", this.fileUpload.data);
+
+        const result = await fetch("/drive/object/form", {
+          method: "POST",
+          body: requestBody,
+        })
+      }
+
+    },
 
 
   }
