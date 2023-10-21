@@ -1,18 +1,21 @@
 <script>
 import {useUserStore} from "@/stores/user";
-import {useImageListStore} from "@/stores/imageList";
+import {useGalleryListStore} from "@/stores/GalleryList";
 
 export default {
   setup() {
     const userStore = useUserStore();
-    const imageListStore = useImageListStore();
-    return {userStore, imageListStore}
+    const galleryListStore = useGalleryListStore();
+    return {userStore, galleryListStore}
   },
   data() {
     return {
       test_base64: "200",
       sc_overlayOn: false,
-      sc_overlayDisplayFilename: "",
+      sc_overlayDisplay: {
+        url: "",
+        type: "",
+      },
     }
   },
   methods: {
@@ -20,18 +23,40 @@ export default {
       window.open("/drive/image/" + this.userStore.id + "/" + filename)
     },
 
-    async dr_deleteImage(){
-      const result = await fetch("/drive/image/"+this.userStore.id+"/"+this.sc_overlayDisplayFilename, {
+    async dr_deleteImage() {
+      const result = await fetch("/drive/image/" + this.sc_overlayDisplay.url, {
         method: "DELETE",
       });
 
-      if(result.status === 200){
-        console.log("image "+filename+" deleted");
+      if (result.status === 200) {
+        console.log("image " + this.sc_overlayDisplay.url + " deleted");
+      } else if (result.status === 400) {
+        console.log("image " + this.sc_overlayDisplay.url + " failed to delete.")
+      } else console.log("An error occurs, please check the source code")
+    },
+
+    sc_getThumbnailUrlOfElement(e) {
+      const type = e.type.toLowerCase();
+      if (type.startsWith("image")) {
+        console.log("http://localhost:8080/drive/image/" + e.url + "/thumbnail")
+        return "http://localhost:8080/drive/image/" + e.url + "/thumbnail";
+      } else if (type.startsWith("video")) {
+        return "https://picsum.photos/200";
+      } else {
+        console.log("Wrong type of element found in galleryList:", e);
+        return "/error"
       }
-      else if(result.status === 400){
-        console.log("image "+filename+" failed to delete.")
+    },
+
+    sc_prepareAndDisplayOverlay(e) {
+      this.sc_overlayDisplay.url = e.url;
+      if(e.type.toLowerCase().startsWith('image')) this.sc_overlayDisplay.type = 'image';
+      else if(e.type.toLowerCase().startsWith('video')) this.sc_overlayDisplay.type = 'video';
+      else {
+        console.log("Wrong type in element", JSON.stringify(e));
       }
-      else console.log("An error occurs, please check the source code")
+
+      this.sc_overlayOn = true
     },
   }
 }
@@ -41,13 +66,14 @@ export default {
 <template>
 
   <div class="flex-container">
-    <div v-for="e in imageListStore.list">
+    <div v-for="e in galleryListStore.list">
 
       <v-hover>
         <template v-slot:default="{isHovering, props}">
           <v-card v-bind="props" :class="'block-'+e.scale+' rounded-xl'" :elevation="isHovering?15:5"
-                  @click="sc_overlayDisplayFilename=e.filename; sc_overlayOn=true">
-            <v-img :src="'http://localhost:8080/drive/image/'+userStore.id+'/'+e.filename+'/thumbnail'"
+                  @click="sc_prepareAndDisplayOverlay(e)">
+            <!--            <v-img :src="sc_getThumbnailUrlOfElement(e)"-->
+            <v-img :src="sc_getThumbnailUrlOfElement(e)"
                    cover=""></v-img>
           </v-card>
         </template>
@@ -60,9 +86,28 @@ export default {
   <v-overlay scroll-strategy="block" v-model="sc_overlayOn" id="display-overlay"
              style="display:flex; align-items: center; justify-content: center">
 
-    <v-img max-height="75vh"
-           :src="'http://localhost:8080/drive/image/'+userStore.id+'/'+sc_overlayDisplayFilename"></v-img>
+    <v-img v-if="this.sc_overlayDisplay.url === 'image'" max-height="75vh"
+           :src="'http://localhost:8080/drive/image/'+sc_overlayDisplay.url"></v-img>
 
+    <div style="height: 50vh; width: 50vw">
+      <video v-if="sc_overlayDisplay.type === 'video'"
+             style="width: 100%; height: 100%"
+             id="my-player"
+             class="video-js rounded-xl"
+             controls
+             preload="auto"
+             poster="https://picsum.photos/400/200"
+             data-setup='{}'>
+        <source :src="'http://localhost:8080/drive/video/'+sc_overlayDisplay.url" type="video/mp4">
+        <p class="vjs-no-js">
+          To view this video please enable JavaScript, and consider upgrading to a
+          web browser that
+          <a href="https://videojs.com/html5-video-support/" target="_blank">
+            supports HTML5 video
+          </a>
+        </p>
+      </video>
+    </div>
     <v-sheet style="padding: 0" class="rounded-xl image-view-controller">
       <v-btn color="error" class="ma-5" @click="dr_deleteImage">Delete</v-btn>
     </v-sheet>
@@ -110,7 +155,6 @@ export default {
 .image-view-controller::-webkit-scrollbar {
   display: none;
 }
-
 
 
 </style>

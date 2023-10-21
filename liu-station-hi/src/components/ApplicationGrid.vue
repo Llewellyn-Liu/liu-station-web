@@ -6,7 +6,7 @@ export default {
       test_appList: [{
         name: "app_1",
         image: "https://picsum.photos/200",
-        url: "/drive",
+        url: "http://localhost:8080/index.html",
       }, {
         name: "app_2",
         image: "https://picsum.photos/200",

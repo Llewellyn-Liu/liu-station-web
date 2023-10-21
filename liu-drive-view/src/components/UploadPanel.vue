@@ -1,9 +1,5 @@
 <script>
 import {useUserStore} from "@/stores/user";
-import {useImageListStore} from "@/stores/imageList";
-import {useFileListStore} from "@/stores/fileList";
-import {fi} from "vuetify/locale";
-
 export default {
   setup() {
     const userStore = useUserStore();
@@ -162,27 +158,6 @@ export default {
       this.sc_tempTag = ''
     },
 
-    //File related methods
-    sc_superUploadFileReader(files) {
-      console.log(files);
-      const file = files[0];
-
-      // if (file) {
-      //   console.log("Test blob:", file.name);
-      //   // this.test_fileData = new Blob([file], {type: file.type});
-      //   this.fileUpload.data = file;
-      //   this.fileUpload.filename = file.name;
-      //   this.fileUpload.size = file.size;
-      //   console.log("Test blob:", this.fileUpload.size);
-      // }
-      //
-      if (file) {
-        console.log("Mime type:", file.type);
-      }
-
-
-    },
-
     /**
      * API v0.1.2 M4.2.2.1
      * @returns {Promise<void>}
@@ -206,7 +181,7 @@ export default {
               "accessibility": this.fileUpload.accessibility,
               "author": this.fileUpload.author,
               "type": this.fileUpload.type,
-              "tag": this.fileUpload.tag,
+              "tags": this.fileUpload.tag,
             }
         )], {type: "application/json"}))
         requestBody.append("file", this.fileUpload.data);
@@ -215,6 +190,69 @@ export default {
           method: "POST",
           body: requestBody,
         })
+      }
+
+    },
+
+    sc_superUploadFileReader(event) {
+      console.log(event.target.files);
+      const file = event.target.files[0];
+      // const file = files[0];
+      //
+      if (file) {
+        this.superUpload.data = file;
+        this.superUpload.filename = file.name;
+        this.superUpload.size = file.size;
+        this.superUpload.type = file.type;
+      }
+
+    },
+
+    test_sendFileAsStream() {
+
+      if(!this.superUpload.data) {
+        console.log("Super upload file is empty")
+      }
+
+      if (this.superUpload.data) {
+        const newConnection = new WebSocket('ws://'+ window.location.host +'/stream');
+
+        const userStoreRef = this.userStore;
+        const fileRef = this.superUpload;
+
+        newConnection.onmessage = function (e) {
+          console.log(e.data, e.data === "ACK")
+          if(e.data === "ACK"){
+            const file = fileRef.data;
+
+            const patches = Math.floor(file.size / 1048576);
+            const patchSize = 1048576;
+
+            for (let i = 0; i < patches; i++) {
+              newConnection.send(file.slice(i * patchSize, (i + 1) * patchSize));
+              console.log("sending: ", i)
+            }
+            newConnection.send(file.slice(patches * patchSize, file.size));
+            newConnection.close()
+            console.log("File:", fileRef.filename, "upload successfully")
+          }
+          else console.log(e.data)
+
+        }
+
+        newConnection.onerror = console.error;
+        newConnection.onopen = function () {
+          const meta = new Blob([JSON.stringify({
+            filename: fileRef.filename,
+            type: fileRef.type,
+            userId: userStoreRef.id,
+            author: fileRef.author,
+            tags: fileRef.tag,
+            accessibility: fileRef.accessibility,
+          })], {type: 'application/json'});
+
+          newConnection.send(meta);
+        }
       }
 
     },
@@ -301,7 +339,8 @@ export default {
       <!--      super upload-->
       <v-col :cols="sc_toggle===2?12:0">
         <div v-show="sc_toggle===2">
-          <v-file-input label="Select File" @update:modelValue="sc_superUploadFileReader($event)"></v-file-input>
+<!--          <v-file-input label="Select File" @update:modelValue="sc_superUploadFileReader($event)"></v-file-input>-->
+          <v-file-input label="Select File" @input="sc_superUploadFileReader($event)"></v-file-input>
           <v-container>
             <v-row>
               <!--            attr setter-->
@@ -322,10 +361,13 @@ export default {
               </v-col>
               <!--            preview-->
               <v-col cols="6">
-
+                <div class="text-h5">File Meta Preview</div>
+                <div>{{ JSON.stringify(this.superUpload) }}
+                </div>
               </v-col>
             </v-row>
           </v-container>
+          <v-btn color="success" @click="test_sendFileAsStream">Upload</v-btn>
         </div>
 
       </v-col>

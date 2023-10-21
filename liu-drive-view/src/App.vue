@@ -1,7 +1,8 @@
 <template>
   <v-app>
     <v-app-bar title="Drive">
-      <v-btn @click="dr_uploadPanelOpen=true" :disabled="!userStore.userLoggedIn" density="default"
+<!--      <v-btn @click="dr_uploadPanelOpen=true" :disabled="!userStore.userLoggedIn" density="default"-->
+      <v-btn @click="dr_uploadPanelOpen=true" density="default"
              icon="mdi-plus"></v-btn>
       <v-btn @click="loginButtonController" id="lg_loginBtTopBar">{{ barLoginButtonContent }}</v-btn>
       <v-card style="width: 20vw; max-width: 25em" v-if="userStore.userLoggedIn">
@@ -78,13 +79,13 @@
 
     <v-bottom-navigation>
       <v-btn @click="sc_alertOpen = !sc_alertOpen">alert</v-btn>
+      <v-file-input @input="test_sendFileAsStream"></v-file-input>
     </v-bottom-navigation>
 
     <v-snackbar v-model="this.loggerStore.display" color="white" timeout="2000">
       <v-alert :type="this.loggerStore.type">{{ this.loggerStore.in }}</v-alert>
       <template v-slot:actions>
         <v-btn variant="text" @click="sc_alertOpen = false" color="black">CLOSE</v-btn>
-
       </template>
     </v-snackbar>
 
@@ -95,11 +96,10 @@
 
 <script>
 import SideBar from "@/components/SideBar.vue";
-import {fi, th} from "vuetify/locale";
 import Grid from "@/components/Grid.vue";
 import {mapState, storeToRefs} from "pinia";
 import {useUserStore} from "@/stores/user";
-import {useImageListStore} from "@/stores/imageList";
+import {useGalleryListStore} from "@/stores/GalleryList";
 import {useFileListStore} from "@/stores/fileList";
 import UploadPanel from "@/components/UploadPanel.vue";
 import {useLoggerStore} from "@/stores/logger";
@@ -107,10 +107,11 @@ import {useLoggerStore} from "@/stores/logger";
 export default {
   setup() {
     const userStore = useUserStore();
-    const imageListStore = useImageListStore();
+    const galleryListStore = useGalleryListStore();
     const fileListStore = useFileListStore();
     const loggerStore = useLoggerStore();
-    return {userStore, imageListStore, fileListStore, loggerStore}
+
+    return {userStore, galleryListStore, fileListStore, loggerStore}
   },
   data() {
     const {id, name, password, token} = storeToRefs(this.userStore)
@@ -195,13 +196,13 @@ export default {
         const memoFetchResult = await this.dr_memoGet();
 
         //Save into pinia
-        this.imageListStore.setList(galleryFetchResult);
+        this.galleryListStore.setList(galleryFetchResult);
         this.fileListStore.setList(fileFetchResult);
         this.fileListStore.setMemo(memoFetchResult);
 
         console.log("Object File List: ", JSON.stringify(this.fileListStore.list));
         console.log("Memo List: ", JSON.stringify(this.fileListStore.memo));
-        console.log("Gallery GET:", JSON.stringify(this.imageListStore.list));
+        console.log("Gallery GET:", JSON.stringify(this.galleryListStore.list));
       } else {
         console.log(response)
       }
@@ -343,7 +344,7 @@ export default {
      */
     async dr_galleryGet(page) {
       console.log("Fetch gallery list", page)
-      const galleryListRes = await fetch("/drive/image/" + this.userStore.id + "/page/" + page, {
+      const galleryListRes = await fetch("/drive/gallery/" + this.userStore.id + "/page/" + page, {
         method: "GET",
       }).then((res) => res.json());
 
@@ -390,28 +391,16 @@ export default {
     },
 
     async dr_refresh() {
-      console.log(this.userStore.id,this.userStore.userLoggedIn, this.userStore.name)
-      // const galleryFetchResult = await this.dr_galleryGet(0);
-      // const fileFetchResult = await this.dr_objectFileListGet(0);
-      // const memoFetchResult = await this.dr_memoGet();
-      //
-      // this.imageListStore.setList(galleryFetchResult);
-      // this.fileListStore.setList(fileFetchResult);
-      // this.fileListStore.setMemo(memoFetchResult);
+      const galleryFetchResult = await this.dr_galleryGet(0);
+      const fileFetchResult = await this.dr_objectFileListGet(0);
+      const memoFetchResult = await this.dr_memoGet();
+
+      this.galleryListStore.setList(galleryFetchResult);
+      this.fileListStore.setList(fileFetchResult);
+      this.fileListStore.setMemo(memoFetchResult);
       console.log("Refreshed")
     },
-    // async dr_refresh() {
-    //   const galleryFetchResult = await this.dr_galleryGet(0);
-    //   const fileFetchResult = await this.dr_objectFileListGet(0);
-    //   const memoFetchResult = await this.dr_memoGet();
-    //
-    //   this.imageListStore.setList(galleryFetchResult);
-    //   this.fileListStore.setList(fileFetchResult);
-    //   this.fileListStore.setMemo(memoFetchResult);
-    //   console.log("Refreshed")
-    // },
 
-    //
   },
   computed: {},
 
